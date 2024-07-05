@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  master-db:
+    image: "mysql:5.7"
+    hostname: ${MASTER_HOST_NAME}
+    container_name: ${MASTER_CONTAINER_NAME}
+    ports:
+      - ${MASTER_PORT}
+    volumes:
+      - ./master:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MASTER_ROOT_PASSWORD}
+    networks:
+      replication_network:
+        ipv4_address: ${MASTER_HOST_IP}
+  slave-db:
+    image: "mysql:5.7"
+    hostname: ${SLAVE_HOST_NAME}
+    container_name: ${SLAVE_CONTAINER_NAME}
+    ports:
+      - ${SLAVE_PORT}
+    volumes:
+      - ./slave:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SLAVE_ROOT_PASSWORD}
+    networks:
+      replication_network:
+        ipv4_address: ${SLAVE_HOST_IP}
+  phpmyadmin:
+    image: "phpmyadmin"
+    container_name: phpmyadmin
+    hostname: phpmyadmin
+    environment:
+        - PMA_ARBITRARY=1
+    restart: always
+    ports:
+      - 8080:80
+    networks:
+      - replication_network
+    depends_on:
+      - master-db
+      - slave-db
+networks:
+  replication_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.208.0.0/16
